@@ -1,20 +1,189 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>
-      Blank
-    </ion-title>
+    <ion-icon
+      slot="start"
+      name="logo-ionic"
+      color="primary"
+      class="ion-margin-start"
+      style="zoom: 1.5"
+    ></ion-icon>
+    <ion-title> Direct Whatsapp </ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
+<ion-content [fullscreen]="true" [class.dark-theme]="dark">
   <ion-header collapse="condense">
     <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
+      <ion-title size="large">Direct Whatsapp</ion-title>
     </ion-toolbar>
   </ion-header>
 
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
-  </div>
+  <div id="container"></div>
+
+  <ion-grid>
+    <ion-row>
+      <ion-col size-md="6" offset-md="3" class="ion-text-center ion-margin-top">
+        <ion-card>
+          <ion-card-header class="ion-text-nowrap" [color]="accentColor">
+            CALL / WHATSAPP UTILITY
+            <br />
+          </ion-card-header>
+          <ion-card-content>
+            <form #f="ngForm">
+              <br />
+              <ion-item>
+                <ion-label position="floating"
+                  >Phone Number - {{ phoneNoCtrl?.value?.toString()?.length
+                  }}/10 Digits
+                </ion-label>
+                <ion-input
+                  type="tel"
+                  required
+                  minlength="10"
+                  maxlength="15"
+                  pattern="\d*"
+                  ngModel
+                  name="phoneNo"
+                  #phoneNoCtrl="ngModel"
+                ></ion-input>
+              </ion-item>
+              <ion-item
+                *ngIf="(!phoneNoCtrl.valid || phoneNoCtrl?.value?.toString()?.length != 10) && phoneNoCtrl.touched"
+                lines="none"
+              >
+                <ion-label color="danger"
+                  ><small>Should be a valid phone number.</small></ion-label
+                >
+              </ion-item>
+              <br />
+              <ion-text [color]="accentColor"
+                ><h1 *ngIf="phoneNoCtrl.value">
+                  +91 {{ phoneNoCtrl?.value | slice:0:5 }} {{ phoneNoCtrl?.value
+                  | slice:5 }}
+                </h1></ion-text
+              >
+              <br />
+
+              <ion-button
+                shape="round"
+                fill="outline"
+                [color]="accentColor"
+                (click)="callNumber('+91' + phoneNoCtrl.value)"
+                [disabled]="phoneNoCtrl.invalid || phoneNoCtrl?.value?.toString()?.length != 10"
+              >
+                <ion-icon
+                  slot="icon-only"
+                  name="call"
+                  color="success"
+                ></ion-icon>
+              </ion-button>
+              &nbsp;&nbsp;
+              <ion-button
+                shape="round"
+                fill="outline"
+                [color]="accentColor"
+                (click)="msgOnWhatsApp('+91' + phoneNoCtrl.value)"
+                [disabled]="phoneNoCtrl.invalid || phoneNoCtrl?.value?.toString()?.length != 10"
+              >
+                <ion-icon
+                  slot="icon-only"
+                  name="logo-whatsapp"
+                  color="success"
+                ></ion-icon>
+              </ion-button>
+
+              <br /><br />
+              <ion-text color="medium"
+                ><small
+                  >With whatsapp utility you can directly message on whatsapp
+                  without saving phone number in phone.</small
+                >
+              </ion-text>
+            </form>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+
+    <ion-row>
+      <ion-col size-md="6" offset-md="3" class="ion-text-center">
+        <ion-card>
+          <ion-card-header class="ion-text-nowrap" [color]="accentColor">
+            THEME SETTINGS
+            <br />
+          </ion-card-header>
+          <ion-card-content>
+            <br />
+            <ion-button fill="clear" slot="end" color="dark">
+              Dark Theme
+              <ion-toggle
+                [(ngModel)]="dark"
+                (ionChange)="updateDarkMode()"
+                color="dark"
+              ></ion-toggle>
+            </ion-button>
+            <br />
+            <br />
+
+            <ion-button
+              color="primary"
+              [fill]="accentColor == 'primary' ? 'outline': 'clear'"
+              (click)="changeAccentColor('primary')"
+            >
+              <ion-icon slot="icon-only" name="color-fill"></ion-icon>
+            </ion-button>
+            <ion-button
+            color="success"
+            [fill]="accentColor == 'success' ? 'outline': 'clear'"
+            (click)="changeAccentColor('success')"
+            >
+            <ion-icon slot="icon-only" name="color-fill"></ion-icon>
+          </ion-button>
+          <ion-button
+            color="tertiary"
+            [fill]="accentColor == 'tertiary' ? 'outline': 'clear'"
+            (click)="changeAccentColor('tertiary')"
+          >
+            <ion-icon slot="icon-only" name="color-fill"></ion-icon>
+          </ion-button>
+            <ion-button
+              color="warning"
+              [fill]="accentColor == 'warning' ? 'outline': 'clear'"
+              (click)="changeAccentColor('warning')"
+            >
+              <ion-icon slot="icon-only" name="color-fill"></ion-icon>
+            </ion-button>
+            <ion-button
+              color="danger"
+              [fill]="accentColor == 'danger' ? 'outline': 'clear'"
+              (click)="changeAccentColor('danger')"
+            >
+              <ion-icon slot="icon-only" name="color-fill"></ion-icon>
+            </ion-button>
+            <ion-button
+            color="secondary"
+            [fill]="accentColor == 'secondary' ? 'outline': 'clear'"
+            (click)="changeAccentColor('secondary')"
+          >
+            <ion-icon slot="icon-only" name="color-fill"></ion-icon>
+          </ion-button>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
 </ion-content>
+
+<!-- Footer without a border -->
+<ion-footer class="ion-no-border" class="ion-text-center">
+  <ion-toolbar>
+    <ion-button
+      fill="clear"
+      href="https://jagdishchopde.wixsite.com/profile"
+      target="_blank"
+      [color]="accentColor"
+    >
+      <ion-label> &copy; Jagdish Chopde - 2021</ion-label>
+    </ion-button>
+  </ion-toolbar>
+</ion-footer>
