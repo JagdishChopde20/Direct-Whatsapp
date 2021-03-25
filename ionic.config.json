@@ -1,0 +1,7 @@
+{
+  "name": "Direct-Whatsapp",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}
