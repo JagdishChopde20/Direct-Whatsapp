@@ -6,6 +6,10 @@ import { Plugins } from '@capacitor/core';
 
 const { Storage } = Plugins;
 
+import { HttpClient } from '@angular/common/http';
+import { ToastController } from '@ionic/angular';
+declare var Razorpay: any;
+
 @Component({
   selector: 'app-home',
   templateUrl: 'home.page.html',
@@ -15,7 +19,12 @@ export class HomePage implements OnInit {
   dark = false;
   accentColor = 'primary';
 
-  constructor(private webIntent: WebIntent, public alertController: AlertController) {
+  constructor(
+    public http: HttpClient,
+    public toastCtrl: ToastController,
+    public alertController: AlertController
+  ) {
+    //private webIntent: WebIntent,
     try {
       // const prefersColor = window.matchMedia('(prefers-color-scheme: dark)');
       // this.dark = prefersColor.matches;
@@ -44,7 +53,6 @@ export class HomePage implements OnInit {
           this.dark = false;
           document.body.classList.remove('dark');
         }
-
       }
       const accentColor = await Storage.get({ key: 'accentColor' });
       if (accentColor?.value) {
@@ -96,6 +104,151 @@ export class HomePage implements OnInit {
     }
   }
 
+  // Razorpay Code:
+  payWithRazorpay(amount, notes) {
+    try {
+      let name, price, theme;
+
+      name = 'Direct Whatsapp';
+      price = amount * 100;
+      theme = '#8F46EE';
+
+      //let url = 'http://localhost:2000/createOrderMilan';
+
+      let firebasefunctions_url =
+        'https://us-central1-directly-whatsapp.cloudfunctions.net/paymentApi/';
+
+      this.http
+        .post(firebasefunctions_url, { amount: price })
+        .subscribe((res) => {
+          console.log(res);
+          console.log(res['id']);
+          var options = {
+            //key: 'rzp_test_i1CjVUmtGPDAk2',
+            key: 'rzp_live_ZPSwzvOlwjcbZC',
+            name: name,
+            description: 'Donate to Jagdish Chopde.',
+            amount: price,
+            currency: 'INR',
+            image: '/assets/icon/favicon.png',
+            order_id: res['id'],
+            callback_url: 'https://directly-whatsapp.firebaseapp.com/home',
+            redirect: true,
+            // handler: (response) => {
+            //   console.log(response);
+            //   this.presentToast();
+            //   this.verifySignature(response);
+            // },
+            // prefill: {
+            //   name: 'Jagdish Chopde',
+            //   // email: 'jagdish.chopde@example.com',
+            //   // contact: '9999999999',
+            // },
+            notes: {
+              Description: notes,
+            },
+            theme: {
+              color: theme,
+            },
+          };
+
+          this.initPay(options);
+        });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  initPay(options) {
+    var rzp1 = new Razorpay(options);
+    rzp1.open();
+  }
+
+  verifySignature(response) {
+    let firebasefunctions_url =
+      'https://us-central1-directly-whatsapp.cloudfunctions.net/paymentApi/confirmPayment';
+
+    this.http.post(firebasefunctions_url, response).subscribe((res) => {
+      console.log('PAYMENT RESPONSE', res['status']);
+      this.presentAlert('PAYMENT RESPONSE', res['status']);
+    });
+  }
+
+  async presentToast() {
+    const toast = await this.toastCtrl.create({
+      message: 'Payment Succesful!',
+      duration: 3000,
+    });
+    toast.present();
+  }
+
+  async presentAlert(title, msg) {
+    const alert = await this.alertController.create({
+      cssClass: 'my-custom-class',
+      header: title,
+      //subHeader: 'Status:',
+      message: msg,
+      buttons: ['OK'],
+    });
+
+    await alert.present();
+  }
+
+  async presentAlertPrompt() {
+    const alert = await this.alertController.create({
+      //cssClass: 'my-custom-class',
+      header: 'Start Payment',
+      inputs: [
+        {
+          name: 'amount',
+          type: 'number',
+          id: 'amount-id',
+          //value: '5',
+          placeholder: 'Enter Amount',
+          attributes: {
+            maxlength: 5,
+            inputmode: 'decimal',
+          },
+          min: 1,
+          max: 10000,
+        },
+        // multiline input.
+        {
+          name: 'notes',
+          id: 'notes',
+          type: 'textarea',
+          placeholder: 'Enter description',
+        },
+      ],
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel',
+          cssClass: 'secondary',
+          handler: () => {
+            console.log('Confirm Cancel');
+          },
+        },
+        {
+          text: 'Ok',
+          handler: (data) => {
+            console.log('Confirm Ok', data.amount, data.notes);
+            if (!data.amount) {
+              this.presentAlert(
+                'Validation Error',
+                'Please enter valid amount.'
+              );
+            } else {
+              this.payWithRazorpay(data.amount, data.notes);
+            }
+          },
+        },
+      ],
+    });
+
+    await alert.present();
+  }
+
   // payViaUPI() {
   //   try {
   //     let guid = Math.floor(Math.random() * 16).toString(16).toUpperCase();
@@ -120,64 +273,48 @@ export class HomePage implements OnInit {
   //   }
   // }
 
+  // payWithUPI() {
+  //   const tid = this.getRandomString();
+  //   const orderId = this.getRandomString();
+  //   const totalPrice = 1.00;
+  //   const UPI_ID = 'sandeepchopde03@oksbi';
+  //   const UPI_NAME = 'Sandeep Chopde';
+  //   const UPI_TXN_NOTE = 'TEST TXN';
+  //   // tslint:disable-next-line: max-line-length
+  //   let uri = `upi://pay?pa=${UPI_ID}&pn=${UPI_NAME}&tid=${tid}&am=${totalPrice}&cu=INR&tn=${UPI_TXN_NOTE}&tr=${orderId}`;
+  //   uri = uri.replace(' ', '+');
+  //   (window as any).plugins.intentShim.startActivityForResult(
+  //     {
+  //       action: this.webIntent.ACTION_VIEW,
+  //       url: uri,
+  //       requestCode: 1
+  //     }, intent => {
+  //       if (intent.extras.requestCode === 1 &&
+  //           intent.extras.resultCode === (window as any).plugins.intentShim.RESULT_OK &&
+  //           intent.extras.Status &&
+  //           (((intent.extras.Status as string).toLowerCase()) === ('success'))) {
+  //         this.paymentSuccess(orderId, 'UPI');
+  //       } else {
+  //         this.presentAlert('Error Fail', 'payment failed');
+  //         alert('payment failed');
+  //       }
+  //     }, err => {
+  //       alert('error ' + err);
+  //     });
+  // }
 
-  async presentAlert(title, msg) {
-    const alert = await this.alertController.create({
-      cssClass: 'my-custom-class',
-      header: title,
-      subHeader: 'Subtitle',
-      message: msg,
-      buttons: ['OK']
-    });
+  // getRandomString() {
+  //   const len = 10;
+  //   const arr = '1234567890asdfghjklqwertyuiopzxcvbnmASDFGHJKLQWERTYUIOPZXCVBNM';
+  //   let ans = '';
+  //   for (let i = len; i > 0; i--) {
+  //       ans += arr[Math.floor(Math.random() * arr.length)];
+  //   }
+  //   return ans;
+  // }
 
-    await alert.present();
-  }
-
-
-  payWithUPI() {
-    const tid = this.getRandomString();
-    const orderId = this.getRandomString();
-    const totalPrice = 1.00;
-    const UPI_ID = 'sandeepchopde03@oksbi';
-    const UPI_NAME = 'Sandeep Chopde';
-    const UPI_TXN_NOTE = 'TEST TXN';
-    // tslint:disable-next-line: max-line-length
-    let uri = `upi://pay?pa=${UPI_ID}&pn=${UPI_NAME}&tid=${tid}&am=${totalPrice}&cu=INR&tn=${UPI_TXN_NOTE}&tr=${orderId}`;
-    uri = uri.replace(' ', '+');
-    (window as any).plugins.intentShim.startActivityForResult(
-      {
-        action: this.webIntent.ACTION_VIEW,
-        url: uri,
-        requestCode: 1
-      }, intent => {
-        if (intent.extras.requestCode === 1 &&
-            intent.extras.resultCode === (window as any).plugins.intentShim.RESULT_OK &&
-            intent.extras.Status &&
-            (((intent.extras.Status as string).toLowerCase()) === ('success'))) {
-          this.paymentSuccess(orderId, 'UPI');
-        } else {
-          this.presentAlert('Error Fail', 'payment failed');
-          alert('payment failed');
-        }
-      }, err => {
-        alert('error ' + err);
-      });
-  }
-
-  getRandomString() {
-    const len = 10;
-    const arr = '1234567890asdfghjklqwertyuiopzxcvbnmASDFGHJKLQWERTYUIOPZXCVBNM';
-    let ans = '';
-    for (let i = len; i > 0; i--) {
-        ans += arr[Math.floor(Math.random() * arr.length)];
-    }
-    return ans;
-  }
-
-  paymentSuccess(orderId: string, paymentMethod: string) {
-    this.presentAlert('Success', `Payment successful Order Id ${orderId} payment method ${paymentMethod}`);
-    alert(`Payment successful Order Id ${orderId} payment method ${paymentMethod}`);
-  }
-
-
+  // paymentSuccess(orderId: string, paymentMethod: string) {
+  //   this.presentAlert('Success', `Payment successful Order Id ${orderId} payment method ${paymentMethod}`);
+  //   alert(`Payment successful Order Id ${orderId} payment method ${paymentMethod}`);
+  // }
 }
