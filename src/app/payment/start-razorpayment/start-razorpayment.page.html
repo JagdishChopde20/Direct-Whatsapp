@@ -1,0 +1,100 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <!-- <ion-buttons slot="start">
+      <ion-back-button
+        defaultHref="/home"
+        routerDirection="backword"
+      ></ion-back-button>
+    </ion-buttons> -->
+    <ion-icon
+      slot="start"
+      name="logo-ionic"
+      color="primary"
+      class="ion-margin-start"
+      style="zoom: 1.5"
+    ></ion-icon>
+    <ion-title> Direct Whatsapp </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-grid>
+    <ion-row>
+      <ion-col size-md="6" offset-md="3" class="ion-text-center">
+        <ion-card *ngIf="!isPaymentSuccess">
+          <ion-card-header class="ion-text-nowrap" color="primary">
+            START PAYMENT
+            <br />
+          </ion-card-header>
+          <ion-card-content>
+            <br />
+            <ion-text color="tertiary" class="ion-text-uppercase">
+              <h3>Order ID: {{order_id | uppercase}}</h3>
+            </ion-text>
+            <br />
+            <ion-text color="success">
+              <h1>Amount: ₹ {{amount}}/-</h1>
+            </ion-text>
+            <ion-text>Description: {{notes}} </ion-text>
+            <br />
+            <br />
+
+            <ion-button color="danger" fill="solid" (click)="startPayment()">
+              <ion-icon slot="start" name="cash"></ion-icon> Pay with Razorpay
+            </ion-button>
+
+            <br /><br />
+            <img [src]="checkout_logo" />
+            <br />
+            <!-- <a href="my.direct.whatsapp://other/parameters/here">Open App</a> -->
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card *ngIf="isPaymentSuccess">
+          <ion-card-header class="ion-text-nowrap" color="success">
+            PAYMENT SUCCESS
+            <br />
+          </ion-card-header>
+          <ion-card-content>
+            <br />
+            <ion-icon
+              name="checkmark-circle-outline"
+              color="success"
+              style="zoom: 10"
+            ></ion-icon>
+            <br />
+
+            <ion-text color="success" class="ion-text-uppercase">
+              <h3>Order ID: {{order_id | uppercase}}</h3>
+            </ion-text>
+            <ion-text color="success" class="ion-text-uppercase">
+              <h3>Payment ID: {{payment_id | uppercase}}</h3>
+            </ion-text>
+            <ion-text
+              color="success"
+              *ngIf="signatureVerified"
+              class="ion-text-uppercase"
+            >
+              <h3>Signature Verified</h3>
+            </ion-text>
+            <ion-text color="danger" *ngIf="!signatureVerified">
+              <h3>Signature Verification Failed</h3>
+            </ion-text>
+            <br />
+            <ion-text color="success" class="ion-text-uppercase">
+              <h3>{{transactionDateTime | date:'long' }}</h3>
+            </ion-text>
+            <br />
+            <img [src]="checkout_logo" />
+            <br />
+          </ion-card-content>
+        </ion-card>
+
+        <br /><br />
+        <ion-button color="warning" fill="solid" (click)="goBackToApp()">
+          <ion-icon slot="start" name="arrow-back"></ion-icon> Go Back To App
+        </ion-button>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</ion-content>

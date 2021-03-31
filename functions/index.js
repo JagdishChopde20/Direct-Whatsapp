@@ -13,8 +13,11 @@ var cors = require("cors");
 var request = require("request");
 const crypto = require("crypto");
 
+// Test Razorpay Keys:
 // const key = "rzp_test_i1CjVUmtGPDAk2";
 // const key_secret = "Yc8izn6GmockEiHPF3C6iZI7";
+
+// Live Razorpay Keys:
 const key = "rzp_live_ZPSwzvOlwjcbZC";
 const key_secret = "GHQlOgktfPRGhECMT1tqx8dC";
 
@@ -71,10 +74,9 @@ app.post("/confirmPayment", (req, res) => {
 
   if (signature === order.razorpay_signature) {
     console.log("PAYMENT SUCCESSFULL");
-
-    res.send({ status: "PAYMENT SUCCESSFULL" });
+    res.send({ status: true });
   } else {
-    res.send({ status: "Something went wrong!" });
+    res.send({ status: false });
     res.end();
   }
 });

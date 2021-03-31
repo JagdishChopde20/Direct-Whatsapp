@@ -7,6 +7,14 @@ const routes: Routes = [
     loadChildren: () => import('./home/home.module').then( m => m.HomePageModule)
   },
   {
+    path: 'start-razorpayment',
+    loadChildren: () => import('./payment/start-razorpayment/start-razorpayment.module').then( m => m.StartRazorpaymentPageModule)
+  },
+  {
+    path: 'success-razorpayment',
+    loadChildren: () => import('./payment/success-razorpayment/success-razorpayment.module').then( m => m.SuccessRazorpaymentPageModule)
+  },
+  {
     path: '',
     redirectTo: 'home',
     pathMatch: 'full'

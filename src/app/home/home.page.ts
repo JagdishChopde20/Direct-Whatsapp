@@ -1,14 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { WebIntent } from '@ionic-native/web-intent/ngx';
-import { AlertController } from '@ionic/angular';
+import { AlertController, Platform } from '@ionic/angular';
 
 import { Plugins } from '@capacitor/core';
-
+import { Router } from '@angular/router';
+import { DataService } from '../services/data.service';
 const { Storage } = Plugins;
-
-import { HttpClient } from '@angular/common/http';
-import { ToastController } from '@ionic/angular';
-declare var Razorpay: any;
 
 @Component({
   selector: 'app-home',
@@ -18,11 +15,13 @@ declare var Razorpay: any;
 export class HomePage implements OnInit {
   dark = false;
   accentColor = 'primary';
+  isOnAndroid: boolean;
 
   constructor(
-    public http: HttpClient,
-    public toastCtrl: ToastController,
-    public alertController: AlertController
+    private platform: Platform,
+    public alertController: AlertController,
+    private router: Router,
+    private dataService: DataService
   ) {
     //private webIntent: WebIntent,
     try {
@@ -57,6 +56,12 @@ export class HomePage implements OnInit {
       const accentColor = await Storage.get({ key: 'accentColor' });
       if (accentColor?.value) {
         this.accentColor = accentColor.value;
+      }
+
+      if (this.platform.is('android') && !this.platform.is("mobileweb")) {
+        this.isOnAndroid = true;
+      } else {
+        this.isOnAndroid = false;
       }
     } catch (error) {
       console.log(error);
@@ -104,96 +109,6 @@ export class HomePage implements OnInit {
     }
   }
 
-  // Razorpay Code:
-  payWithRazorpay(amount, notes) {
-    try {
-      let name, price, theme;
-
-      name = 'Direct Whatsapp';
-      price = amount * 100;
-      theme = '#8F46EE';
-
-      //let url = 'http://localhost:2000/createOrderMilan';
-
-      let firebasefunctions_url =
-        'https://us-central1-directly-whatsapp.cloudfunctions.net/paymentApi/';
-
-      this.http
-        .post(firebasefunctions_url, { amount: price })
-        .subscribe((res) => {
-          console.log(res);
-          console.log(res['id']);
-          var options = {
-            //key: 'rzp_test_i1CjVUmtGPDAk2',
-            key: 'rzp_live_ZPSwzvOlwjcbZC',
-            name: name,
-            description: 'Donate to Jagdish Chopde.',
-            amount: price,
-            currency: 'INR',
-            image: '/assets/icon/favicon.png',
-            order_id: res['id'],
-            callback_url: 'https://directly-whatsapp.firebaseapp.com/home',
-            redirect: true,
-            // handler: (response) => {
-            //   console.log(response);
-            //   this.presentToast();
-            //   this.verifySignature(response);
-            // },
-            // prefill: {
-            //   name: 'Jagdish Chopde',
-            //   // email: 'jagdish.chopde@example.com',
-            //   // contact: '9999999999',
-            // },
-            notes: {
-              Description: notes,
-            },
-            theme: {
-              color: theme,
-            },
-          };
-
-          this.initPay(options);
-        });
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  initPay(options) {
-    var rzp1 = new Razorpay(options);
-    rzp1.open();
-  }
-
-  verifySignature(response) {
-    let firebasefunctions_url =
-      'https://us-central1-directly-whatsapp.cloudfunctions.net/paymentApi/confirmPayment';
-
-    this.http.post(firebasefunctions_url, response).subscribe((res) => {
-      console.log('PAYMENT RESPONSE', res['status']);
-      this.presentAlert('PAYMENT RESPONSE', res['status']);
-    });
-  }
-
-  async presentToast() {
-    const toast = await this.toastCtrl.create({
-      message: 'Payment Succesful!',
-      duration: 3000,
-    });
-    toast.present();
-  }
-
-  async presentAlert(title, msg) {
-    const alert = await this.alertController.create({
-      cssClass: 'my-custom-class',
-      header: title,
-      //subHeader: 'Status:',
-      message: msg,
-      buttons: ['OK'],
-    });
-
-    await alert.present();
-  }
-
   async presentAlertPrompt() {
     const alert = await this.alertController.create({
       //cssClass: 'my-custom-class',
@@ -231,15 +146,47 @@ export class HomePage implements OnInit {
         },
         {
           text: 'Ok',
-          handler: (data) => {
+          handler: async (data) => {
             console.log('Confirm Ok', data.amount, data.notes);
             if (!data.amount) {
-              this.presentAlert(
+              this.dataService.presentAlert(
                 'Validation Error',
                 'Please enter valid amount.'
               );
             } else {
-              this.payWithRazorpay(data.amount, data.notes);
+              let loading = await this.dataService.loading('Loading...');
+              try {
+                loading.present();
+
+                let res = await this.dataService.createOrderOnRazorpay(
+                  data.amount
+                );
+                if (res && res['id']) {
+                  if (this.isOnAndroid) {
+                    window.open(
+                      `https://directly-whatsapp.web.app/start-razorpayment?device=android&order_id=${res['id']}&amount=${data.amount}&notes=${data.notes}`,
+                      '_blank'
+                    );
+                  } else {
+                    this.router.navigate(['start-razorpayment'], {
+                      queryParams: {
+                        order_id: res['id'],
+                        amount: data.amount,
+                        notes: data.notes,
+                      },
+                    });
+                  }
+                } else {
+                  this.dataService.presentAlert(
+                    'Razorpay Error',
+                    'Unable to create your order. Please try again.'
+                  );
+                }
+              } catch (error) {
+                console.log(error);
+              } finally {
+                loading.dismiss();
+              }
             }
           },
         },
